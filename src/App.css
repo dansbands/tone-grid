@@ -32,6 +32,22 @@
   color: #b8c2d9;
 }
 
+.tab-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.tab-button {
+  background: rgba(255, 255, 255, 0.06);
+  color: #dce5f7;
+}
+
+.tab-button-active {
+  background: linear-gradient(135deg, #8d7dff, #5ec5ff);
+  color: #07111d;
+}
+
 .control-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -104,6 +120,18 @@
   gap: 1.5rem;
 }
 
+.grid-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -145,9 +173,30 @@
   background: rgba(94, 197, 255, 0.1);
 }
 
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.note-cell {
+  min-height: 56px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eef4ff;
+}
+
+.note-cell-active {
+  background: linear-gradient(135deg, rgba(141, 125, 255, 0.95), rgba(94, 197, 255, 0.95));
+  color: #07111d;
+}
+
 @media (max-width: 860px) {
   .content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .note-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .section-header,
@@ -155,5 +204,17 @@
   .pattern-step {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .tab-row,
+  .grid-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .note-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

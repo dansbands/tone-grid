@@ -180,3 +180,98 @@ export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
     dispose,
   };
 }
+
+export function createLiveNotePlayer() {
+  let audioContext = null;
+  const activeNodes = new Map();
+
+  async function ensureAudioContext() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    return audioContext;
+  }
+
+  async function startNote(note) {
+    if (activeNodes.has(note)) {
+      return true;
+    }
+
+    const context = await ensureAudioContext();
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = noteToFrequency(note);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + 0.08);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+
+    oscillator.start(now);
+    activeNodes.set(note, { oscillator, gain });
+
+    return true;
+  }
+
+  function stopNote(note, fadeSeconds = 0.18) {
+    if (!audioContext || !activeNodes.has(note)) {
+      activeNodes.delete(note);
+      return false;
+    }
+
+    const now = audioContext.currentTime;
+    const { oscillator, gain } = activeNodes.get(note);
+
+    try {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + fadeSeconds);
+      oscillator.stop(now + fadeSeconds + 0.05);
+    } catch {
+      // Ignore already-stopped nodes.
+    }
+
+    activeNodes.delete(note);
+    return false;
+  }
+
+  async function toggleNote(note) {
+    if (activeNodes.has(note)) {
+      stopNote(note);
+      return false;
+    }
+
+    await startNote(note);
+    return true;
+  }
+
+  function stopAll() {
+    Array.from(activeNodes.keys()).forEach((note) => {
+      stopNote(note, 0.2);
+    });
+  }
+
+  function dispose() {
+    stopAll();
+
+    if (audioContext) {
+      audioContext.close();
+      audioContext = null;
+    }
+  }
+
+  return {
+    toggleNote,
+    stopAll,
+    dispose,
+  };
+}
