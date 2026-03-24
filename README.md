@@ -2,7 +2,7 @@
 
 Tone Grid is an open-source acoustic instrument conditioning app for sustained resonance work.
 
-It is designed for players who want to run long-form tone cycles, explore sympathetic vibration, and manually excite notes across a full pitch grid. The project is inspired by dedicated instrument conditioning tools in this category, but takes a more flexible approach: the software is open source, the feature set is broader, and any companion hardware can be sourced a la carte instead of being locked into a single bundled system.
+It is designed for players who want to run long-form tone cycles, explore sympathetic vibration, and mechanically excite notes across a full pitch grid. The project is inspired by dedicated instrument conditioning tools in this category, but takes a more flexible approach: the software is open source, the feature set is broader, and any companion hardware can be sourced a la carte instead of being locked into a single bundled system.
 
 ## What the project does
 
