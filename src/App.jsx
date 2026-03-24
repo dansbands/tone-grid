@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { instruments } from "../config/instruments.ts";
-import { presetCategories, presets } from "../config/presets.ts";
 import { createLiveNotePlayer, createTonePlayer } from "./utils/audio";
+import { buildBasicCycle } from "./utils/basicCycles";
+import { formatCountdown, getDemoAccessState } from "./utils/demoAccess";
 import { formatNote, transposeNote } from "./utils/notes";
-import { resolvePresetPattern } from "./utils/patterns";
 
 const DURATION_UNIT_OPTIONS = [
   { value: "seconds", label: "Seconds", singular: "second", plural: "seconds", multiplier: 1 },
@@ -14,10 +14,12 @@ const DURATION_UNIT_OPTIONS = [
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const OCTAVES = [1, 2, 3, 4, 5, 6, 7];
 const OCTAVE_SHIFT_OPTIONS = [-2, -1, 0, 1, 2];
-
-function getDefaultPreset(category) {
-  return presets.find((preset) => preset.category === category)?.id ?? "";
-}
+const DEMO_DURATION_SECONDS = 15 * 60;
+const BASIC_CYCLE_OPTIONS = [
+  { id: "up", label: "Open strings up" },
+  { id: "down", label: "Open strings down" },
+  { id: "ping-pong", label: "Open strings ping-pong" },
+];
 
 function convertDurationToSeconds(value, unit) {
   const selectedUnit = DURATION_UNIT_OPTIONS.find((option) => option.value === unit);
@@ -25,12 +27,12 @@ function convertDurationToSeconds(value, unit) {
 }
 
 function formatDuration(value, unit) {
-  const option = DURATION_UNIT_OPTIONS.find((o) => o.value === unit);
+  const option = DURATION_UNIT_OPTIONS.find((item) => item.value === unit);
   const unitLabel = option ? (value === 1 ? option.singular : option.plural) : unit;
   return `${value} ${unitLabel}`;
 }
 
-function formatSecondsAsDuration(seconds) {
+function formatStepDuration(seconds) {
   if (seconds % 3600 === 0) {
     return formatDuration(seconds / 3600, "hours");
   }
@@ -43,35 +45,29 @@ function formatSecondsAsDuration(seconds) {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState("presets");
+  const [activeTab, setActiveTab] = useState("instruments");
   const [instrumentId, setInstrumentId] = useState(instruments[0].id);
-  const [category, setCategory] = useState(presetCategories[0]);
-  const [presetId, setPresetId] = useState(getDefaultPreset(presetCategories[0]));
+  const [cycleMode, setCycleMode] = useState(BASIC_CYCLE_OPTIONS[0].id);
   const [octaveShift, setOctaveShift] = useState(0);
   const [holdDurationValue, setHoldDurationValue] = useState(15);
   const [holdDurationUnit, setHoldDurationUnit] = useState("seconds");
-  const [cycleDurationValue, setCycleDurationValue] = useState(1);
-  const [cycleDurationUnit, setCycleDurationUnit] = useState("hours");
+  const [cycleDurationValue, setCycleDurationValue] = useState(10);
+  const [cycleDurationUnit, setCycleDurationUnit] = useState("minutes");
+  const [accessMode, setAccessMode] = useState("guest");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupSubmitted, setSignupSubmitted] = useState(false);
+  const [now, setNow] = useState(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
-  const [activeGridNotes, setActiveGridNotes] = useState(new Set());
+  const [activeLiveNotes, setActiveLiveNotes] = useState(new Set());
   const playerRef = useRef(null);
   const liveNotePlayerRef = useRef(null);
+  const demoStartedAtRef = useRef(Date.now());
   const selectionKeyRef = useRef("");
 
   const instrument = useMemo(
     () => instruments.find((item) => item.id === instrumentId) ?? instruments[0],
     [instrumentId]
-  );
-
-  const visiblePresets = useMemo(
-    () => presets.filter((preset) => preset.category === category),
-    [category]
-  );
-
-  const preset = useMemo(
-    () => visiblePresets.find((item) => item.id === presetId) ?? visiblePresets[0],
-    [presetId, visiblePresets]
   );
 
   const holdDurationSeconds = useMemo(
@@ -84,32 +80,31 @@ export default function App() {
     [cycleDurationValue, cycleDurationUnit]
   );
 
-  const steps = useMemo(() => {
-    if (!preset) {
-      return [];
-    }
+  const demoAccess = useMemo(
+    () =>
+      getDemoAccessState({
+        startedAt: demoStartedAtRef.current,
+        now,
+        durationSeconds: DEMO_DURATION_SECONDS,
+      }),
+    [now]
+  );
 
-    const baseSteps = resolvePresetPattern(instrument, preset, holdDurationSeconds);
-
-    if (octaveShift === 0) {
-      return baseSteps;
-    }
-
-    return baseSteps.map((step) => ({
-      ...step,
-      notes: step.notes.map((note) => transposeNote(note, octaveShift * 12)),
-    }));
-  }, [instrument, preset, holdDurationSeconds, octaveShift]);
+  const cycleSteps = useMemo(
+    () => buildBasicCycle({ instrument, mode: cycleMode, holdDurationSeconds, octaveShift }),
+    [instrument, cycleMode, holdDurationSeconds, octaveShift]
+  );
 
   const selectionKey = [
+    activeTab,
     instrumentId,
-    category,
-    presetId,
+    cycleMode,
     octaveShift,
     holdDurationValue,
     holdDurationUnit,
     cycleDurationValue,
     cycleDurationUnit,
+    accessMode,
   ].join(":");
 
   useEffect(() => {
@@ -119,25 +114,18 @@ export default function App() {
     });
     liveNotePlayerRef.current = createLiveNotePlayer();
 
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
     return () => {
+      window.clearInterval(timer);
       playerRef.current?.dispose();
-      playerRef.current = null;
       liveNotePlayerRef.current?.dispose();
+      playerRef.current = null;
       liveNotePlayerRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    const nextPresetId = getDefaultPreset(category);
-
-    setPresetId((currentPresetId) => {
-      if (visiblePresets.some((item) => item.id === currentPresetId)) {
-        return currentPresetId;
-      }
-
-      return nextPresetId;
-    });
-  }, [category, visiblePresets]);
 
   useEffect(() => {
     if (!selectionKeyRef.current) {
@@ -145,26 +133,25 @@ export default function App() {
       return;
     }
 
-    if (selectionKeyRef.current !== selectionKey && isPlaying) {
+    if (selectionKeyRef.current !== selectionKey) {
       playerRef.current?.stop();
+      liveNotePlayerRef.current?.stopAll();
+      setActiveLiveNotes(new Set());
     }
 
     selectionKeyRef.current = selectionKey;
-  }, [selectionKey, isPlaying]);
+  }, [selectionKey]);
 
   useEffect(() => {
-    if (activeTab !== "presets" && isPlaying) {
+    if (demoAccess.expired) {
       playerRef.current?.stop();
-    }
-
-    if (activeTab !== "grid" && activeGridNotes.size) {
       liveNotePlayerRef.current?.stopAll();
-      setActiveGridNotes(new Set());
+      setActiveLiveNotes(new Set());
     }
-  }, [activeTab, isPlaying, activeGridNotes]);
+  }, [demoAccess.expired]);
 
-  const handleConditioningToggle = async () => {
-    if (!playerRef.current || !preset) {
+  const handleCycleToggle = async () => {
+    if (!playerRef.current || demoAccess.expired) {
       return;
     }
 
@@ -174,20 +161,20 @@ export default function App() {
     }
 
     await playerRef.current.playSequence({
-      steps,
+      steps: cycleSteps,
       loop: true,
       runForSeconds: cycleDurationSeconds,
     });
   };
 
-  const handleGridNoteToggle = async (note) => {
-    if (!liveNotePlayerRef.current) {
+  const handleLiveNoteToggle = async (note) => {
+    if (!liveNotePlayerRef.current || demoAccess.expired) {
       return;
     }
 
     const isActive = await liveNotePlayerRef.current.toggleNote(note);
 
-    setActiveGridNotes((previous) => {
+    setActiveLiveNotes((previous) => {
       const next = new Set(previous);
 
       if (isActive) {
@@ -200,25 +187,36 @@ export default function App() {
     });
   };
 
-  const handleClearGrid = () => {
+  const handleClearLiveNotes = () => {
     liveNotePlayerRef.current?.stopAll();
-    setActiveGridNotes(new Set());
+    setActiveLiveNotes(new Set());
   };
 
-  const currentStep = currentStepIndex >= 0 ? steps[currentStepIndex] : null;
+  const handleSignupSubmit = (event) => {
+    event.preventDefault();
+
+    if (!signupEmail.trim()) {
+      return;
+    }
+
+    setSignupSubmitted(true);
+    setAccessMode("signup");
+  };
+
+  const currentStep = currentStepIndex >= 0 ? cycleSteps[currentStepIndex] : null;
 
   return (
     <main className="app-shell">
       <section className="panel hero-panel">
-        <p className="eyebrow">Acoustic tone conditioning</p>
-        <h1>Sustained resonance conditioning for common string instruments.</h1>
+        <p className="eyebrow">Free ToneGrid demo</p>
+        <h1>Simple sustained tones for acoustic instrument conditioning.</h1>
         <p className="hero-copy">
-          Pick an instrument, choose a conditioning preset, and let long-held
-          tones energize sympathetic vibration.
+          ToneGrid is the free entry product: a clean note grid, instrument-specific
+          string views, and basic sustained playback without premium analysis or guided workflows.
         </p>
-        <div className="tab-row" role="tablist" aria-label="Tone tools">
+        <div className="tab-row" role="tablist" aria-label="ToneGrid views">
           {[
-            { id: "presets", label: "Presets" },
+            { id: "instruments", label: "Instruments" },
             { id: "grid", label: "Grid" },
           ].map((tab) => (
             <button
@@ -235,16 +233,67 @@ export default function App() {
         </div>
       </section>
 
-      {activeTab === "presets" ? (
+      <section className="panel access-panel">
+        <div className="access-copy">
+          <h2>Guest demo access</h2>
+          <p>
+            Use ToneGrid as a guest or optionally sign up for product updates. This demo session is intentionally time-limited so it stays useful without becoming an unlimited automation tool.
+          </p>
+        </div>
+        <div className="access-controls">
+          <div className="access-status-row">
+            <span className="status-pill">
+              {demoAccess.expired
+                ? "Demo period ended"
+                : `Time remaining: ${formatCountdown(demoAccess.remainingSeconds)}`}
+            </span>
+            <span className="status-pill status-pill-secondary">
+              {accessMode === "signup" || signupSubmitted ? "Optional signup selected" : "Guest mode active"}
+            </span>
+          </div>
+
+          <div className="access-button-row">
+            <button
+              type="button"
+              className={accessMode === "guest" ? "primary-button" : "secondary-button"}
+              onClick={() => setAccessMode("guest")}
+            >
+              Continue as guest
+            </button>
+            <button
+              type="button"
+              className={accessMode === "signup" ? "primary-button" : "secondary-button"}
+              onClick={() => setAccessMode("signup")}
+            >
+              Optional signup
+            </button>
+          </div>
+
+          {accessMode === "signup" ? (
+            <form className="signup-form" onSubmit={handleSignupSubmit}>
+              <input
+                type="email"
+                placeholder="Email for product updates"
+                value={signupEmail}
+                onChange={(event) => setSignupEmail(event.target.value)}
+              />
+              <button type="submit">Save for this session</button>
+            </form>
+          ) : null}
+
+          {signupSubmitted ? (
+            <p className="helper-copy">Signup interest saved in this demo session only.</p>
+          ) : null}
+        </div>
+      </section>
+
+      {activeTab === "instruments" ? (
         <>
           <section className="panel controls-panel">
             <div className="control-grid">
               <label className="field">
                 <span>Instrument</span>
-                <select
-                  value={instrumentId}
-                  onChange={(event) => setInstrumentId(event.target.value)}
-                >
+                <select value={instrumentId} onChange={(event) => setInstrumentId(event.target.value)} disabled={demoAccess.expired}>
                   {instruments.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
@@ -254,39 +303,19 @@ export default function App() {
               </label>
 
               <label className="field">
-                <span>Category</span>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  {presetCategories.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
+                <span>Basic demo cycle</span>
+                <select value={cycleMode} onChange={(event) => setCycleMode(event.target.value)} disabled={demoAccess.expired}>
+                  {BASIC_CYCLE_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
               </label>
 
               <label className="field">
-                <span>Conditioning preset</span>
-                <select
-                  value={preset?.id ?? ""}
-                  onChange={(event) => setPresetId(event.target.value)}
-                >
-                  {visiblePresets.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="field">
-                <span>Shift cycle by octaves</span>
-                <select
-                  value={octaveShift}
-                  onChange={(event) => setOctaveShift(Number(event.target.value))}
-                >
+                <span>Shift by octaves</span>
+                <select value={octaveShift} onChange={(event) => setOctaveShift(Number(event.target.value))} disabled={demoAccess.expired}>
                   {OCTAVE_SHIFT_OPTIONS.map((value) => (
                     <option key={value} value={value}>
                       {value > 0 ? `+${value}` : value}
@@ -303,14 +332,10 @@ export default function App() {
                     min="1"
                     step="1"
                     value={holdDurationValue}
-                    onChange={(event) =>
-                      setHoldDurationValue(Number(event.target.value) || 1)
-                    }
+                    onChange={(event) => setHoldDurationValue(Number(event.target.value) || 1)}
+                    disabled={demoAccess.expired}
                   />
-                  <select
-                    value={holdDurationUnit}
-                    onChange={(event) => setHoldDurationUnit(event.target.value)}
-                  >
+                  <select value={holdDurationUnit} onChange={(event) => setHoldDurationUnit(event.target.value)} disabled={demoAccess.expired}>
                     {DURATION_UNIT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -321,44 +346,37 @@ export default function App() {
               </div>
 
               <div className="field">
-                <span>Continue resonance cycle for</span>
+                <span>Continue demo cycle for</span>
                 <div className="duration-row">
                   <input
                     type="number"
                     min="1"
                     step="1"
                     value={cycleDurationValue}
-                    onChange={(event) =>
-                      setCycleDurationValue(Number(event.target.value) || 1)
-                    }
+                    onChange={(event) => setCycleDurationValue(Number(event.target.value) || 1)}
+                    disabled={demoAccess.expired}
                   />
-                  <select
-                    value={cycleDurationUnit}
-                    onChange={(event) => setCycleDurationUnit(event.target.value)}
-                  >
-                    {DURATION_UNIT_OPTIONS.filter((option) => option.value !== "seconds").map(
-                      (option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      )
-                    )}
+                  <select value={cycleDurationUnit} onChange={(event) => setCycleDurationUnit(event.target.value)} disabled={demoAccess.expired}>
+                    {DURATION_UNIT_OPTIONS.filter((option) => option.value !== "seconds").map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             </div>
 
             <div className="action-row">
-              <button className="primary-button" onClick={handleConditioningToggle}>
-                {isPlaying ? "Stop conditioning" : "Start conditioning"}
+              <button className="primary-button" onClick={handleCycleToggle} disabled={demoAccess.expired}>
+                {isPlaying ? "Stop cycle" : "Start cycle"}
               </button>
               <div className="status-pill">
-                {isPlaying && currentStep
-                  ? `Resonating: ${currentStep.label}`
-                  : `Cycle length: ${formatDuration(
-                      cycleDurationValue,
-                      cycleDurationUnit
-                    )}`}
+                {demoAccess.expired
+                  ? "Guest demo locked"
+                  : isPlaying && currentStep
+                    ? `Playing: ${currentStep.label}`
+                    : `Cycle length: ${formatDuration(cycleDurationValue, cycleDurationUnit)}`}
               </div>
             </div>
           </section>
@@ -366,44 +384,54 @@ export default function App() {
           <section className="content-grid">
             <article className="panel strings-panel">
               <div className="section-header">
-                <h2>{instrument.name}</h2>
-                <p>Standard tuning</p>
+                <div>
+                  <h2>{instrument.name}</h2>
+                  <p>Instrument page with open strings and simple tone controls.</p>
+                </div>
               </div>
 
               <div className="string-list">
-                {instrument.strings.map((string, index) => (
-                  <div key={`${string.label}-${index}`} className="string-card">
-                    <span className="string-label">{string.label}</span>
-                    <span className="string-note">
-                      {formatNote(transposeNote(string.note, octaveShift * 12))}
-                    </span>
-                  </div>
-                ))}
+                {instrument.strings.map((string, index) => {
+                  const shiftedNote = transposeNote(string.note, octaveShift * 12);
+                  const isActive = activeLiveNotes.has(shiftedNote);
+
+                  return (
+                    <div key={`${string.label}-${index}`} className="string-card">
+                      <div>
+                        <span className="string-label">{string.label}</span>
+                        <div className="string-note">{formatNote(shiftedNote)}</div>
+                      </div>
+                      <button
+                        type="button"
+                        className={isActive ? "secondary-button" : "primary-button"}
+                        onClick={() => handleLiveNoteToggle(shiftedNote)}
+                        disabled={demoAccess.expired}
+                      >
+                        {isActive ? "Release tone" : "Hold tone"}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </article>
 
             <article className="panel pattern-panel">
               <div className="section-header">
-                <h2>{preset?.name}</h2>
-                <p>{steps.length} sustained tones</p>
+                <div>
+                  <h2>Demo cycle preview</h2>
+                  <p>Free ToneGrid only includes basic open-string demo cycles.</p>
+                </div>
               </div>
 
               <div className="pattern-list">
-                {steps.map((step, index) => (
-                  <div
-                    key={`${step.label}-${index}`}
-                    className={`pattern-step ${
-                      currentStepIndex === index ? "pattern-step-active" : ""
-                    }`}
-                  >
+                {cycleSteps.map((step, index) => (
+                  <div key={`${step.label}-${index}`} className={`pattern-step ${currentStepIndex === index ? "pattern-step-active" : ""}`}>
                     <div>
-                      <strong>Tone {index + 1}</strong>
+                      <strong>Step {index + 1}</strong>
                       <p>{step.label}</p>
                     </div>
                     <div className="pattern-notes">
-                      {step.notes.map((note) => formatNote(note)).join(" + ")} · {formatSecondsAsDuration(
-                        step.durationSeconds
-                      )}
+                      {step.notes.map((note) => formatNote(note)).join(" + ")} · {formatStepDuration(step.durationSeconds)}
                     </div>
                   </div>
                 ))}
@@ -415,14 +443,14 @@ export default function App() {
         <section className="panel grid-panel">
           <div className="section-header">
             <div>
-              <h2>Full Tone Grid</h2>
-              <p>Click any note to hold or release it manually.</p>
+              <h2>Full note grid</h2>
+              <p>Basic free grid for manually holding and releasing sustained tones.</p>
             </div>
             <div className="grid-actions">
               <div className="status-pill">
-                {activeGridNotes.size ? `${activeGridNotes.size} active tones` : "No active tones"}
+                {activeLiveNotes.size ? `${activeLiveNotes.size} active tones` : "No active tones"}
               </div>
-              <button type="button" onClick={handleClearGrid}>
+              <button type="button" onClick={handleClearLiveNotes} disabled={demoAccess.expired}>
                 Clear grid
               </button>
             </div>
@@ -436,14 +464,15 @@ export default function App() {
 
                 return OCTAVES.map((octave) => {
                   const note = `${NOTE_NAMES[actualNoteIndex]}${octave}`;
-                  const isActive = activeGridNotes.has(note);
+                  const isActive = activeLiveNotes.has(note);
 
                   return (
                     <button
                       key={note}
                       type="button"
                       className={`note-cell ${isActive ? "note-cell-active" : ""}`}
-                      onClick={() => handleGridNoteToggle(note)}
+                      onClick={() => handleLiveNoteToggle(note)}
+                      disabled={demoAccess.expired}
                     >
                       {note}
                     </button>

@@ -1,31 +1,47 @@
-# Tone Grid
+# ToneGrid
 
-Tone Grid is an open-source acoustic instrument conditioning app for sustained resonance work.
+ToneGrid is the free/demo product in this family.
 
-It is designed for players who want to run long-form tone cycles, explore sympathetic vibration, and mechanically excite notes across a full pitch grid. The project is inspired by dedicated instrument conditioning tools in this category, but takes a more flexible approach: the software is open source, the feature set is broader, and any companion hardware can be sourced a la carte instead of being locked into a single bundled system.
+It exists to show the basic value of sustained tones for acoustic instrument conditioning without exposing premium workflows, intelligence, analysis, or pro tooling.
 
-## What the project does
+## Product scope
 
-Tone Grid helps condition acoustic instruments by generating sustained tones that can be held for seconds, minutes, or hours.
+ToneGrid includes only the entry-level experience:
 
-The app currently supports two working modes:
+- a full note grid
+- instrument pages with open-string access
+- sustained tones
+- basic playback controls
+- guest usage
+- optional signup captured only for the current session
+- a gated demo period that gives a real feel for the product while limiting abuse
 
-- `Presets` — structured resonance cycles for common string instruments
-- `Grid` — a full note grid for manually holding and releasing tones
+ToneGrid does not include:
 
-Instead of treating the experience like a sequencer, Tone Grid focuses on long-held pitches, resonance strategies, and simple repeatable workflows.
+- advanced conditioning workflows
+- structured routines
+- saved sessions
+- long-duration preset recall
+- guided intent-based flows
+- resonance targeting
+- comparison tools
+- luthier or shop workflows
+- analysis features
+- scientific adjustment tooling
+- premium intelligence of any kind
 
-## Core features
+## Current app surfaces
 
-- Instrument-specific tuning presets
-- Sustained resonance cycles with configurable hold time
-- Configurable cycle runtime in minutes or hours
-- Global octave transposition for the full preset cycle
-- Neighbor-tone beating presets with simultaneous dual-tone playback
-- Open-string and interval-based conditioning presets
-- Manual full-note grid with click-to-hold tones
-- Smooth fade-ins and fade-outs to reduce abrupt transitions
-- Fully in-memory configuration with no backend or persistence requirements
+### Instruments
+- choose an instrument
+- hold open strings manually
+- run a simple open-string cycle
+- shift the whole cycle by octaves
+- control tone hold time and cycle duration
+
+### Grid
+- manually hold and release notes across the full note grid
+- clear active notes at any time
 
 ## Supported instruments
 
@@ -39,60 +55,21 @@ Instead of treating the experience like a sequencer, Tone Grid focuses on long-h
 - Bass
 - Dobro (G tuning)
 
-## Preset categories
+## Demo access model
 
-### Open Strings
-- Cycle Up
-- Cycle Down
-- Ping-Pong
-- Adjacent Pairs
+ToneGrid is meant to be useful as a free product while still protecting the boundary with paid products.
 
-### Neighbor Tones
-- Tight Neighbor Beating ($\pm 1$ semitone)
-- Wide Neighbor Beating ($\pm 2$ semitones)
+The current demo model is intentionally lightweight:
 
-### Intervals / Drones
-- Fifth Drone
-- Octave Drone
-- Root + Fifth Pattern
-- Root + Octave Pattern
+- guest access works immediately
+- optional signup is available but stored only in memory for the current session
+- playback is gated by a limited demo window
 
-## How it works
+## Architecture
 
-### Presets mode
-Use `Presets` mode when you want a structured conditioning routine.
+See [docs/product-boundary.md](docs/product-boundary.md) for the product boundary and repo ownership rules.
 
-You can:
-
-- choose an instrument
-- choose a preset category
-- choose a conditioning preset
-- shift the whole cycle up or down by octaves
-- set how long each tone should ring
-- set how long the full cycle should continue
-
-Neighbor-tone presets play two outer tones simultaneously to create controlled beating around a string center. Example: around `G`, a tight neighbor preset uses `F#` and `G#` together.
-
-### Grid mode
-Use `Grid` mode when you want direct manual control.
-
-The note grid lets you:
-
-- click any note to start sustaining it
-- click again to release it
-- hold multiple notes at once
-- clear all active notes instantly
-
-This is useful for experimentation, custom resonance work, and testing notes outside the built-in preset system.
-
-## Why this project exists
-
-Tone Grid is built for musicians who want:
-
-- a software-first conditioning workflow
-- more control over duration and pitch behavior
-- transparent, modifiable source code
-- the freedom to pair the app with their own speakers, transducers, amps, stands, or custom hardware setups
+See [docs/migration-inventory.md](docs/migration-inventory.md) for premium/pro concepts removed or deferred for later migration.
 
 ## Tech stack
 
@@ -100,58 +77,49 @@ Tone Grid is built for musicians who want:
 - Vite
 - Web Audio API
 - ESLint
+- Vitest
 
-## Getting started
+## Development
 
-### Install dependencies
+### Install
 
 ```bash
 npm install
 ```
 
-### Start the development server
+### Run locally
 
 ```bash
 npm run dev
 ```
 
-### Build for production
+### Build
 
 ```bash
 npm run build
 ```
 
-### Run lint checks
+### Lint
 
 ```bash
 npm run lint
 ```
 
+### Test
+
+```bash
+npm run test
+```
+
 ## Project structure
 
-- [config/instruments.ts](config/instruments.ts) — supported instruments and standard tunings
-- [config/presets.ts](config/presets.ts) — preset categories and preset definitions
-- [src/App.jsx](src/App.jsx) — main UI, tabs, controls, and interaction flow
-- [src/utils/audio.js](src/utils/audio.js) — sustained tone playback and live grid audio
-- [src/utils/patterns.js](src/utils/patterns.js) — preset pattern resolution
-- [src/utils/notes.js](src/utils/notes.js) — note, MIDI, frequency, and transposition helpers
+- [config/instruments.ts](config/instruments.ts) — free ToneGrid instrument data
+- [src/App.jsx](src/App.jsx) — main free product UI
+- [src/utils/audio.js](src/utils/audio.js) — sustained tone playback
+- [src/utils/basicCycles.js](src/utils/basicCycles.js) — basic free-only cycle construction
+- [src/utils/demoAccess.js](src/utils/demoAccess.js) — guest demo timing rules
+- [src/utils/notes.js](src/utils/notes.js) — note and transposition helpers
 
-## Current design principles
+## Product principle
 
-- keep the UI simple
-- prefer readable configuration over heavy abstraction
-- keep playback focused on resonance and conditioning
-- avoid backend dependencies
-- make it easy to extend instruments, presets, and hardware workflows later
-
-## Roadmap ideas
-
-- export and share custom presets
-- alternate wave shapes and voicing controls
-- hardware integration guides
-- configurable amplitude profiles
-- improved mobile and tablet ergonomics
-
-## Open source
-
-This project is intended to stay flexible, inspectable, and hackable. If you want to adapt it for a different instrument family, alternate tunings, or a custom hardware setup, the current structure is meant to make that straightforward.
+ToneGrid should remain a clean, useful, no-intelligence entry product. It should demonstrate the value of sustained tones without leaking premium workflows that belong elsewhere.
