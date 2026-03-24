@@ -7,9 +7,9 @@ import { formatNote, transposeNote } from "./utils/notes";
 import { resolvePresetPattern } from "./utils/patterns";
 
 const DURATION_UNIT_OPTIONS = [
-  { value: "seconds", label: "Seconds", multiplier: 1 },
-  { value: "minutes", label: "Minutes", multiplier: 60 },
-  { value: "hours", label: "Hours", multiplier: 3600 },
+  { value: "seconds", label: "Seconds", singular: "second", plural: "seconds", multiplier: 1 },
+  { value: "minutes", label: "Minutes", singular: "minute", plural: "minutes", multiplier: 60 },
+  { value: "hours", label: "Hours", singular: "hour", plural: "hours", multiplier: 3600 },
 ];
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const OCTAVES = [1, 2, 3, 4, 5, 6, 7];
@@ -25,7 +25,9 @@ function convertDurationToSeconds(value, unit) {
 }
 
 function formatDuration(value, unit) {
-  return `${value} ${unit}`;
+  const option = DURATION_UNIT_OPTIONS.find((o) => o.value === unit);
+  const unitLabel = option ? (value === 1 ? option.singular : option.plural) : unit;
+  return `${value} ${unitLabel}`;
 }
 
 function formatSecondsAsDuration(seconds) {

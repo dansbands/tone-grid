@@ -1,5 +1,9 @@
 import { noteToFrequency } from "./notes";
 
+// Browser setTimeout delay is stored as a 32-bit signed integer; values
+// exceeding this limit cause the timer to fire immediately (or not at all).
+const MAX_TIMEOUT_MS = 2147483647; // 2^31 - 1
+
 export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
   let audioContext = null;
   let timers = [];
@@ -91,7 +95,7 @@ export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
       if (activeNodes.every((node) => stepNodes.includes(node))) {
         activeNodes = [];
       }
-    }, (durationSeconds + 0.2) * 1000);
+    }, Math.min((durationSeconds + 0.2) * 1000, MAX_TIMEOUT_MS));
 
     timers.push(releaseTimer);
   }
@@ -124,7 +128,7 @@ export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
           }
 
           stop();
-        }, stopAfterMs)
+        }, Math.min(stopAfterMs, MAX_TIMEOUT_MS))
       );
     }
 
@@ -139,7 +143,7 @@ export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
 
           onStepChange?.(index);
           playStep(step);
-        }, elapsed);
+        }, Math.min(elapsed, MAX_TIMEOUT_MS));
 
         timers.push(timer);
         elapsed += stepDurationsMs[index];
@@ -156,7 +160,7 @@ export function createTonePlayer({ onStepChange, onPlaybackStateChange } = {}) {
         }
 
         stop();
-      }, totalDurationMs);
+      }, Math.min(totalDurationMs, MAX_TIMEOUT_MS));
 
       timers.push(completionTimer);
     }

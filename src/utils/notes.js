@@ -25,6 +25,13 @@ export function noteToMidi(note) {
   const [, name, octaveText] = match;
   const octave = Number(octaveText);
 
+  if (!Object.prototype.hasOwnProperty.call(NOTE_INDEX, name)) {
+    throw new Error(`Invalid note name "${name}" in note: ${note}`);
+  }
+
+  if (!Number.isFinite(octave)) {
+    throw new Error(`Invalid octave "${octaveText}" in note: ${note}`);
+  }
   return NOTE_INDEX[name] + (octave + 1) * 12;
 }
 
@@ -46,7 +53,7 @@ export function noteToFrequency(note) {
 }
 
 export function formatNote(note) {
-  return note.replace(/(-?\d+)$/, "$1");
+  return note;
 }
 
 export function stripOctave(note) {
