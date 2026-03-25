@@ -54,12 +54,12 @@ Owns reusable low-level building blocks that are product-neutral, such as:
 ## Current audit summary
 
 ### Keep in ToneGrid
-- [src/App.jsx](src/App.jsx) basic instrument/grid UI
-- [config/instruments.ts](config/instruments.ts) instrument tuning data
-- [src/utils/audio.js](src/utils/audio.js) sustained tone playback
-- [src/utils/notes.js](src/utils/notes.js) note conversion utilities
-- [src/utils/basicCycles.js](src/utils/basicCycles.js) simple open-string cycles
-- [src/utils/demoAccess.js](src/utils/demoAccess.js) guest demo gating
+- [src/App.jsx](../src/App.jsx) basic instrument/grid UI
+- [config/instruments.ts](../config/instruments.ts) instrument tuning data
+- [src/utils/audio.js](../src/utils/audio.js) sustained tone playback
+- [src/utils/notes.js](../src/utils/notes.js) note conversion utilities
+- [src/utils/basicCycles.js](../src/utils/basicCycles.js) simple open-string cycles
+- [src/utils/demoAccess.js](../src/utils/demoAccess.js) guest demo gating
 
 ### Remove entirely from ToneGrid
 - premium-flavored marketing language about intelligence or advanced conditioning
