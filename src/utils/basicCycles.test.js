@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { instruments } from "../../config/instruments.ts";
+import { instrumentsById } from "../../config/instruments.ts";
 import { buildBasicCycle } from "./basicCycles";
 
 describe("buildBasicCycle", () => {
   it("builds a simple open-string cycle for the selected instrument", () => {
     const cycle = buildBasicCycle({
-      instrument: instruments[0],
+      instrument: instrumentsById["violin"],
       mode: "up",
       holdDurationSeconds: 15,
       octaveShift: 0,
@@ -18,7 +18,7 @@ describe("buildBasicCycle", () => {
 
   it("applies octave shifting without introducing premium multi-tone workflows", () => {
     const cycle = buildBasicCycle({
-      instrument: instruments[0],
+      instrument: instrumentsById["violin"],
       mode: "down",
       holdDurationSeconds: 20,
       octaveShift: 1,

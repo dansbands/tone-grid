@@ -273,6 +273,7 @@ export default function App() {
             <form className="signup-form" onSubmit={handleSignupSubmit}>
               <input
                 type="email"
+                aria-label="Email for product updates"
                 placeholder="Email for product updates"
                 value={signupEmail}
                 onChange={(event) => setSignupEmail(event.target.value)}
