@@ -20,6 +20,21 @@ const BASIC_CYCLE_OPTIONS = [
   { id: "down", label: "Open strings down" },
   { id: "ping-pong", label: "Open strings ping-pong" },
 ];
+const SPECTRUM_SWATCHES = [
+  "#ff7a59",
+  "#ffb347",
+  "#f6d860",
+  "#6bcf7f",
+  "#49b6ff",
+  "#6f7bff",
+  "#c86bff",
+];
+const ENABLE_CYCLE_CONTROLS = false;
+const ENABLE_OCTAVE_SHIFT = false;
+const ENABLE_HOLD_DURATION_CONTROL = false;
+const ENABLE_CYCLE_DURATION_CONTROL = false;
+const ENABLE_CYCLE_PLAYBACK = false;
+const ENABLE_DEMO_CYCLE_PREVIEW = false;
 
 function convertDurationToSeconds(value, unit) {
   const selectedUnit = DURATION_UNIT_OPTIONS.find((option) => option.value === unit);
@@ -56,6 +71,7 @@ export default function App() {
   const [accessMode, setAccessMode] = useState("guest");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupSubmitted, setSignupSubmitted] = useState(false);
+  const [isAccessBannerVisible, setIsAccessBannerVisible] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
@@ -206,71 +222,43 @@ export default function App() {
   const currentStep = currentStepIndex >= 0 ? cycleSteps[currentStepIndex] : null;
 
   return (
-    <main className="app-shell">
-      <section className="panel hero-panel">
-        <p className="eyebrow">Free ToneGrid demo</p>
-        <h1>Simple sustained tones for acoustic instrument conditioning.</h1>
-        <p className="hero-copy">
-          ToneGrid is the free entry product: a clean note grid, instrument-specific
-          string views, and basic sustained playback without premium analysis or guided workflows.
-        </p>
-        <div className="tab-row" role="tablist" aria-label="ToneGrid views">
-          {[
-            { id: "instruments", label: "Instruments" },
-            { id: "grid", label: "Grid" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              className={`tab-button ${activeTab === tab.id ? "tab-button-active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </section>
+    <main className="utility-shell">
+      {isAccessBannerVisible ? (
+        <section className="glass-card access-banner">
+          <div className="access-banner-main">
+            <div className="access-banner-copy">
+              <strong className="banner-title">Free access</strong>
+              <p>
+                This browser utility currently includes Instruments and Grid. Additional guided workflows remain hidden for paid unlocks.
+              </p>
+            </div>
 
-      <section className="panel access-panel">
-        <div className="access-copy">
-          <h2>Guest demo access</h2>
-          <p>
-            Use ToneGrid as a guest or optionally sign up for product updates. This demo session is intentionally time-limited so it stays useful without becoming an unlimited automation tool.
-          </p>
-        </div>
-        <div className="access-controls">
-          <div className="access-status-row">
-            <span className="status-pill">
-              {demoAccess.expired
-                ? "Demo period ended"
-                : `Time remaining: ${formatCountdown(demoAccess.remainingSeconds)}`}
-            </span>
-            <span className="status-pill status-pill-secondary">
-              {accessMode === "signup" || signupSubmitted ? "Optional signup selected" : "Guest mode active"}
-            </span>
-          </div>
-
-          <div className="access-button-row">
-            <button
-              type="button"
-              className={accessMode === "guest" ? "primary-button" : "secondary-button"}
-              onClick={() => setAccessMode("guest")}
-            >
-              Continue as guest
-            </button>
-            <button
-              type="button"
-              className={accessMode === "signup" ? "primary-button" : "secondary-button"}
-              onClick={() => setAccessMode("signup")}
-            >
-              Optional signup
-            </button>
+            <div className="access-banner-actions">
+              <span className="status-pill">
+                {demoAccess.expired
+                  ? "Demo period ended"
+                  : `Time remaining: ${formatCountdown(demoAccess.remainingSeconds)}`}
+              </span>
+              <button
+                type="button"
+                className={accessMode === "signup" ? "primary-button" : "secondary-button"}
+                onClick={() => setAccessMode(accessMode === "signup" ? "guest" : "signup")}
+              >
+                {accessMode === "signup" ? "Hide email form" : "Get product updates"}
+              </button>
+              <button
+                type="button"
+                className="dismiss-button"
+                onClick={() => setIsAccessBannerVisible(false)}
+                aria-label="Dismiss free access banner"
+              >
+                Hide banner
+              </button>
+            </div>
           </div>
 
           {accessMode === "signup" ? (
-            <form className="signup-form" onSubmit={handleSignupSubmit}>
+            <form className="signup-form access-banner-form" onSubmit={handleSignupSubmit}>
               <input
                 type="email"
                 aria-label="Email for product updates"
@@ -278,21 +266,66 @@ export default function App() {
                 value={signupEmail}
                 onChange={(event) => setSignupEmail(event.target.value)}
               />
-              <button type="submit">Save for this session</button>
+              <button type="submit" className="primary-button">
+                Save for this session
+              </button>
             </form>
           ) : null}
 
-          {signupSubmitted ? (
-            <p className="helper-copy">Signup interest saved in this demo session only.</p>
-          ) : null}
+          {signupSubmitted ? <p className="helper-copy">Signup interest saved in this session only.</p> : null}
+        </section>
+      ) : null}
+
+      <header className="utility-header">
+        <div className="utility-brand">
+          <h1>ToneSmith</h1>
+          <p>Browser tone utility</p>
         </div>
-      </section>
+
+        <div className="utility-header-actions">
+          <div className="tab-row" role="tablist" aria-label="ToneSmith views">
+            {[
+              { id: "instruments", label: "Instruments" },
+              { id: "grid", label: "Grid" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`tab-button ${activeTab === tab.id ? "tab-button-active" : ""}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="workspace-pills">
+            <span className="status-pill status-pill-soft">
+              {demoAccess.expired
+                ? "Demo period ended"
+                : `Time remaining: ${formatCountdown(demoAccess.remainingSeconds)}`}
+            </span>
+            {!isAccessBannerVisible ? (
+              <button type="button" className="secondary-button" onClick={() => setIsAccessBannerVisible(true)}>
+                Show access banner
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </header>
 
       {activeTab === "instruments" ? (
-        <>
-          <section className="panel controls-panel">
-            <div className="control-grid">
-              <label className="field">
+        <section className="glass-card instrument-panel">
+          <div className="section-header utility-section-header">
+            <div>
+              <h2>Instruments</h2>
+              <p>Select an instrument and hold or release each open string.</p>
+            </div>
+
+            <div className="instrument-panel-actions">
+              <label className="field compact-field">
                 <span>Instrument</span>
                 <select value={instrumentId} onChange={(event) => setInstrumentId(event.target.value)} disabled={demoAccess.expired}>
                   {instruments.map((item) => (
@@ -302,156 +335,49 @@ export default function App() {
                   ))}
                 </select>
               </label>
-
-              <label className="field">
-                <span>Basic demo cycle</span>
-                <select value={cycleMode} onChange={(event) => setCycleMode(event.target.value)} disabled={demoAccess.expired}>
-                  {BASIC_CYCLE_OPTIONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="field">
-                <span>Shift by octaves</span>
-                <select value={octaveShift} onChange={(event) => setOctaveShift(Number(event.target.value))} disabled={demoAccess.expired}>
-                  {OCTAVE_SHIFT_OPTIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {value > 0 ? `+${value}` : value}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="field">
-                <span>Sustain each tone for</span>
-                <div className="duration-row">
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={holdDurationValue}
-                    onChange={(event) => setHoldDurationValue(Number(event.target.value) || 1)}
-                    disabled={demoAccess.expired}
-                  />
-                  <select value={holdDurationUnit} onChange={(event) => setHoldDurationUnit(event.target.value)} disabled={demoAccess.expired}>
-                    {DURATION_UNIT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="field">
-                <span>Continue demo cycle for</span>
-                <div className="duration-row">
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={cycleDurationValue}
-                    onChange={(event) => setCycleDurationValue(Number(event.target.value) || 1)}
-                    disabled={demoAccess.expired}
-                  />
-                  <select value={cycleDurationUnit} onChange={(event) => setCycleDurationUnit(event.target.value)} disabled={demoAccess.expired}>
-                    {DURATION_UNIT_OPTIONS.filter((option) => option.value !== "seconds").map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
             </div>
+          </div>
 
-            <div className="action-row">
-              <button className="primary-button" onClick={handleCycleToggle} disabled={demoAccess.expired}>
-                {isPlaying ? "Stop cycle" : "Start cycle"}
-              </button>
-              <div className="status-pill">
-                {demoAccess.expired
-                  ? "Guest demo locked"
-                  : isPlaying && currentStep
-                    ? `Playing: ${currentStep.label}`
-                    : `Cycle length: ${formatDuration(cycleDurationValue, cycleDurationUnit)}`}
-              </div>
-            </div>
-          </section>
+          <div className="string-list">
+            {instrument.strings.map((string, index) => {
+              const shiftedNote = transposeNote(string.note, octaveShift * 12);
+              const isActive = activeLiveNotes.has(shiftedNote);
 
-          <section className="content-grid">
-            <article className="panel strings-panel">
-              <div className="section-header">
-                <div>
-                  <h2>{instrument.name}</h2>
-                  <p>Instrument page with open strings and simple tone controls.</p>
-                </div>
-              </div>
-
-              <div className="string-list">
-                {instrument.strings.map((string, index) => {
-                  const shiftedNote = transposeNote(string.note, octaveShift * 12);
-                  const isActive = activeLiveNotes.has(shiftedNote);
-
-                  return (
-                    <div key={`${string.label}-${index}`} className="string-card">
-                      <div>
-                        <span className="string-label">{string.label}</span>
-                        <div className="string-note">{formatNote(shiftedNote)}</div>
-                      </div>
-                      <button
-                        type="button"
-                        className={isActive ? "secondary-button" : "primary-button"}
-                        onClick={() => handleLiveNoteToggle(shiftedNote)}
-                        disabled={demoAccess.expired}
-                      >
-                        {isActive ? "Release tone" : "Hold tone"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
-
-            <article className="panel pattern-panel">
-              <div className="section-header">
-                <div>
-                  <h2>Demo cycle preview</h2>
-                  <p>Free ToneGrid only includes basic open-string demo cycles.</p>
-                </div>
-              </div>
-
-              <div className="pattern-list">
-                {cycleSteps.map((step, index) => (
-                  <div key={`${step.label}-${index}`} className={`pattern-step ${currentStepIndex === index ? "pattern-step-active" : ""}`}>
-                    <div>
-                      <strong>Step {index + 1}</strong>
-                      <p>{step.label}</p>
-                    </div>
-                    <div className="pattern-notes">
-                      {step.notes.map((note) => formatNote(note)).join(" + ")} · {formatStepDuration(step.durationSeconds)}
-                    </div>
+              return (
+                <div
+                  key={`${string.label}-${index}`}
+                  className="string-card"
+                  style={{ "--string-accent": SPECTRUM_SWATCHES[index % SPECTRUM_SWATCHES.length] }}
+                >
+                  <div>
+                    <span className="string-label">{string.label}</span>
+                    <div className="string-note">{formatNote(shiftedNote)}</div>
                   </div>
-                ))}
-              </div>
-            </article>
-          </section>
-        </>
+                  <button
+                    type="button"
+                    className={isActive ? "secondary-button" : "primary-button"}
+                    onClick={() => handleLiveNoteToggle(shiftedNote)}
+                    disabled={demoAccess.expired}
+                  >
+                    {isActive ? "Release tone" : "Hold tone"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       ) : (
-        <section className="panel grid-panel">
-          <div className="section-header">
+        <section className="glass-card grid-panel">
+          <div className="section-header utility-section-header">
             <div>
-              <h2>Full note grid</h2>
-              <p>Basic free grid for manually holding and releasing sustained tones.</p>
+              <h2>Grid</h2>
+              <p>Tap any note to hold or release it directly from the chromatic grid.</p>
             </div>
             <div className="grid-actions">
-              <div className="status-pill">
+              <div className="status-pill status-pill-soft">
                 {activeLiveNotes.size ? `${activeLiveNotes.size} active tones` : "No active tones"}
               </div>
-              <button type="button" onClick={handleClearLiveNotes} disabled={demoAccess.expired}>
+              <button type="button" className="secondary-button" onClick={handleClearLiveNotes} disabled={demoAccess.expired}>
                 Clear grid
               </button>
             </div>
@@ -472,6 +398,7 @@ export default function App() {
                       key={note}
                       type="button"
                       className={`note-cell ${isActive ? "note-cell-active" : ""}`}
+                      style={{ "--tone-color": SPECTRUM_SWATCHES[actualNoteIndex % SPECTRUM_SWATCHES.length] }}
                       onClick={() => handleLiveNoteToggle(note)}
                       disabled={demoAccess.expired}
                     >
