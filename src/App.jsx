@@ -278,12 +278,12 @@ export default function App() {
 
       <header className="utility-header">
         <div className="utility-brand">
-          <h1>ToneSmith</h1>
+          <h1>ToneGrid</h1>
           <p>Browser tone utility</p>
         </div>
 
         <div className="utility-header-actions">
-          <div className="tab-row" role="tablist" aria-label="ToneSmith views">
+          <div className="tab-row" role="tablist" aria-label="ToneGrid views">
             {[
               { id: "instruments", label: "Instruments" },
               { id: "grid", label: "Grid" },
