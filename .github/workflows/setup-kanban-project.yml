@@ -1,6 +1,10 @@
 name: Setup Kanban Project
 
+# Runs automatically when changes land on main, and can also be triggered manually.
+# Uses GITHUB_TOKEN with projects:write — no extra secret needed.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -8,36 +12,51 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: read
-      repository-projects: write
-    env:
-      GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+      projects: write
     steps:
-      - name: Create project and add issues
+      - name: Create project and add all open issues
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
-            const repo = context.repo.repo;
+            const repo  = context.repo.repo;
+            const title = "tone-grid";
 
-            // 1. Create a new ProjectV2 on the user account
-            const createProject = await github.graphql(`
-              mutation($ownerId: ID!, $title: String!) {
-                createProjectV2(input: { ownerId: $ownerId, title: $title }) {
-                  projectV2 { id number url }
+            // ── 1. Resolve the owner's node ID ───────────────────────────────
+            const ownerData = await github.graphql(`
+              query($login: String!) {
+                user(login: $login) { id }
+              }
+            `, { login: owner });
+            const ownerId = ownerData.user.id;
+
+            // ── 2. Skip if the project already exists ────────────────────────
+            const existing = await github.graphql(`
+              query($login: String!) {
+                user(login: $login) {
+                  projectsV2(first: 50) { nodes { id title url } }
                 }
               }
-            `, {
-              ownerId: (await github.graphql(`query($login: String!) {
-                user(login: $login) { id }
-              }`, { login: owner })).user.id,
-              title: "tone-grid"
-            });
+            `, { login: owner });
+            let project = existing.user.projectsV2.nodes.find(p => p.title === title);
 
-            const project = createProject.createProjectV2.projectV2;
-            console.log(`Created project: ${project.url}`);
+            if (project) {
+              console.log(`Project already exists: ${project.url}`);
+            } else {
+              // ── 3. Create the project ───────────────────────────────────────
+              const created = await github.graphql(`
+                mutation($ownerId: ID!, $title: String!) {
+                  createProjectV2(input: { ownerId: $ownerId, title: $title }) {
+                    projectV2 { id number url }
+                  }
+                }
+              `, { ownerId, title });
+              project = created.createProjectV2.projectV2;
+              console.log(`Created project: ${project.url}`);
+            }
 
-            // 2. Fetch the default Status field and its option IDs
+            // ── 4. Discover the Status field and its option IDs ──────────────
             const fieldsResult = await github.graphql(`
               query($projectId: ID!) {
                 node(id: $projectId) {
@@ -56,37 +75,26 @@ jobs:
             `, { projectId: project.id });
 
             const statusField = fieldsResult.node.fields.nodes.find(f => f.name === "Status");
-            const todoOption    = statusField?.options.find(o => o.name === "Todo");
-            const inProgOption  = statusField?.options.find(o => o.name === "In Progress");
-            const doneOption    = statusField?.options.find(o => o.name === "Done");
+            const todoOption  = statusField?.options.find(o => o.name === "Todo");
 
-            console.log("Status field:", statusField?.id);
-            console.log("Options:", todoOption?.id, inProgOption?.id, doneOption?.id);
-
-            // 3. Fetch all open issues from the repo
-            const issuesResult = await github.paginate(github.rest.issues.listForRepo, {
+            // ── 5. Add every open issue (idempotent – duplicates are ignored) ─
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
               owner, repo, state: "open", per_page: 100
             });
+            console.log(`Adding ${issues.length} open issues…`);
 
-            console.log(`Found ${issuesResult.length} open issues`);
-
-            // 4. Add each issue to the project
-            for (const issue of issuesResult) {
+            for (const issue of issues) {
               const addResult = await github.graphql(`
                 mutation($projectId: ID!, $contentId: ID!) {
                   addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
                     item { id }
                   }
                 }
-              `, {
-                projectId: project.id,
-                contentId: issue.node_id
-              });
+              `, { projectId: project.id, contentId: issue.node_id });
 
               const itemId = addResult.addProjectV2ItemById.item.id;
-              console.log(`Added issue #${issue.number} as item ${itemId}`);
+              console.log(`  ✓ issue #${issue.number} → item ${itemId}`);
 
-              // Set status to Todo by default
               if (statusField && todoOption) {
                 await github.graphql(`
                   mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
@@ -95,9 +103,7 @@ jobs:
                       itemId: $itemId,
                       fieldId: $fieldId,
                       value: { singleSelectOptionId: $optionId }
-                    }) {
-                      projectV2Item { id }
-                    }
+                    }) { projectV2Item { id } }
                   }
                 `, {
                   projectId: project.id,
@@ -108,4 +114,4 @@ jobs:
               }
             }
 
-            console.log(`Done! Project URL: ${project.url}`);
+            console.log(`\nDone! Board: ${project.url}`);

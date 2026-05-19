@@ -9,11 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: read
+      projects: write
     steps:
       - name: Add issue to project
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
+          github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
 
@@ -21,7 +22,7 @@ jobs:
             const projectsResult = await github.graphql(`
               query($login: String!) {
                 user(login: $login) {
-                  projectsV2(first: 20) {
+                  projectsV2(first: 50) {
                     nodes { id title }
                   }
                 }
@@ -30,7 +31,7 @@ jobs:
 
             const project = projectsResult.user.projectsV2.nodes.find(p => p.title === "tone-grid");
             if (!project) {
-              core.warning("tone-grid project not found. Run the setup-kanban-project workflow first.");
+              core.warning("tone-grid project not found. Merge the setup PR to create it.");
               return;
             }
 
