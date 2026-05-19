@@ -9,42 +9,40 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: read
-      projects: write
+      repository-projects: write
     steps:
-      - name: Add issue to project
+      - name: Add issue to Todo column
         uses: actions/github-script@v7
         with:
           github-token: ${{ github.token }}
           script: |
             const owner = context.repo.owner;
+            const repo  = context.repo.repo;
 
-            // Find the tone-grid project
-            const projectsResult = await github.graphql(`
-              query($login: String!) {
-                user(login: $login) {
-                  projectsV2(first: 50) {
-                    nodes { id title }
-                  }
-                }
-              }
-            `, { login: owner });
-
-            const project = projectsResult.user.projectsV2.nodes.find(p => p.title === "tone-grid");
+            // Find the tone-grid board
+            const { data: projects } = await github.rest.projects.listForRepo({
+              owner, repo, state: "open"
+            });
+            const project = projects.find(p => p.name === "tone-grid");
             if (!project) {
-              core.warning("tone-grid project not found. Merge the setup PR to create it.");
+              core.warning("tone-grid board not found. Merge the setup PR to create it.");
               return;
             }
 
-            // Add the new issue to the project
-            await github.graphql(`
-              mutation($projectId: ID!, $contentId: ID!) {
-                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
-                  item { id }
-                }
-              }
-            `, {
-              projectId: project.id,
-              contentId: context.payload.issue.node_id
+            // Find the Todo column
+            const { data: columns } = await github.rest.projects.listColumns({
+              project_id: project.id
             });
+            const todoCol = columns.find(c => c.name === "Todo");
+            if (!todoCol) {
+              core.warning("Todo column not found on the tone-grid board.");
+              return;
+            }
 
-            console.log(`Added issue #${context.payload.issue.number} to project "${project.title}"`);
+            // Add the new issue
+            await github.rest.projects.createCard({
+              column_id: todoCol.id,
+              content_id: context.payload.issue.id,
+              content_type: "Issue"
+            });
+            console.log(`Added issue #${context.payload.issue.number} to Todo`);
