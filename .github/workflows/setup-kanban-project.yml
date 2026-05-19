@@ -1,10 +1,11 @@
 name: Setup Kanban Project
 
-# Runs automatically when changes land on main, and can also be triggered manually.
+# Runs on any push to this PR branch so the board is created immediately,
+# again when merged to main, and can be triggered manually at any time.
 # Uses GITHUB_TOKEN with projects:write — no extra secret needed.
 on:
   push:
-    branches: [main]
+    branches: [main, "copilot/**"]
   workflow_dispatch:
 
 jobs:
