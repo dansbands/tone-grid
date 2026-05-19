@@ -1,5 +1,5 @@
 export const TONE_CONDITIONER_BASE_URL =
-  import.meta.env.VITE_TONE_CONDITIONER_BASE_URL || "https://toneconditioner.example.com";
+  import.meta.env.VITE_TONE_CONDITIONER_BASE_URL || null;
 
 export const TONE_CONDITIONER_HANDOFF_REFS = {
   portfolioCta: "portfolio_cta",
@@ -24,5 +24,12 @@ export function buildToneConditionerHandoffUrl({
 }
 
 export function getToneConditionerHandoffUrl(ref) {
+  if (!TONE_CONDITIONER_BASE_URL) {
+    console.warn(
+      "[ToneGrid] VITE_TONE_CONDITIONER_BASE_URL is not set. " +
+        "The upgrade CTA will be disabled until this env var is configured."
+    );
+    return null;
+  }
   return buildToneConditionerHandoffUrl({ ref });
 }

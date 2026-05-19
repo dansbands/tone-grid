@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   buildToneConditionerHandoffUrl,
   TONE_CONDITIONER_HANDOFF_REFS,
@@ -46,5 +46,41 @@ describe("buildToneConditionerHandoffUrl", () => {
         ref: "unknown_ref",
       })
     ).toThrow("Unsupported ToneConditioner handoff ref");
+  });
+});
+
+describe("getToneConditionerHandoffUrl", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns null and warns when VITE_TONE_CONDITIONER_BASE_URL is not set", async () => {
+    vi.stubEnv("VITE_TONE_CONDITIONER_BASE_URL", "");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const { getToneConditionerHandoffUrl, TONE_CONDITIONER_HANDOFF_REFS: refs } =
+      await import("./handoff");
+
+    const result = getToneConditionerHandoffUrl(refs.upgradeButton);
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("VITE_TONE_CONDITIONER_BASE_URL"));
+
+    warnSpy.mockRestore();
+  });
+
+  it("returns the handoff URL when VITE_TONE_CONDITIONER_BASE_URL is set", async () => {
+    vi.stubEnv("VITE_TONE_CONDITIONER_BASE_URL", "https://toneconditioner.test");
+
+    const { getToneConditionerHandoffUrl, TONE_CONDITIONER_HANDOFF_REFS: refs } =
+      await import("./handoff");
+
+    const result = getToneConditionerHandoffUrl(refs.upgradeButton);
+
+    expect(result).toBe("https://toneconditioner.test/from/tonegrid?ref=upgrade_button");
   });
 });

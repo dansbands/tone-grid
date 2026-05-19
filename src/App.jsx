@@ -229,8 +229,11 @@ export default function App() {
               <button
                 type="button"
                 className="primary-button"
+                disabled={!upgradeHandoffUrl}
                 onClick={() => {
-                  window.location.assign(upgradeHandoffUrl);
+                  if (upgradeHandoffUrl) {
+                    window.location.assign(upgradeHandoffUrl);
+                  }
                 }}
               >
                 Sign Up / Upgrade
