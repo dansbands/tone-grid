@@ -47,6 +47,15 @@ describe("buildToneConditionerHandoffUrl", () => {
       })
     ).toThrow("Unsupported ToneConditioner handoff ref");
   });
+
+  it("rejects missing base URL", () => {
+    expect(() =>
+      buildToneConditionerHandoffUrl({
+        baseUrl: null,
+        ref: TONE_CONDITIONER_HANDOFF_REFS.upgradeButton,
+      })
+    ).toThrow("ToneConditioner handoff baseUrl is required");
+  });
 });
 
 describe("getToneConditionerHandoffUrl", () => {

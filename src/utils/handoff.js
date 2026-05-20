@@ -14,11 +14,15 @@ export function buildToneConditionerHandoffUrl({
   baseUrl = TONE_CONDITIONER_BASE_URL,
   ref,
 }) {
+  if (typeof baseUrl !== "string" || baseUrl.trim() === "") {
+    throw new Error("ToneConditioner handoff baseUrl is required");
+  }
+
   if (!SUPPORTED_HANDOFF_REFS.has(ref)) {
     throw new Error(`Unsupported ToneConditioner handoff ref: ${ref}`);
   }
 
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
+  const normalizedBaseUrl = baseUrl.trim().replace(/\/+$/, "");
 
   return `${normalizedBaseUrl}/from/tonegrid?ref=${encodeURIComponent(ref)}`;
 }
