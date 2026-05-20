@@ -206,7 +206,10 @@ export default function App() {
   };
 
   const currentStep = currentStepIndex >= 0 ? cycleSteps[currentStepIndex] : null;
-  const upgradeHandoffUrl = getToneConditionerHandoffUrl(TONE_CONDITIONER_HANDOFF_REFS.upgradeButton);
+  const upgradeHandoffUrl = useMemo(
+    () => getToneConditionerHandoffUrl(TONE_CONDITIONER_HANDOFF_REFS.upgradeButton),
+    [],
+  );
 
   return (
     <main className="utility-shell">
