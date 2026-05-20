@@ -69,7 +69,6 @@ export default function App() {
   const [holdDurationUnit, setHoldDurationUnit] = useState("seconds");
   const [cycleDurationValue, setCycleDurationValue] = useState(10);
   const [cycleDurationUnit, setCycleDurationUnit] = useState("minutes");
-  const [isAccessBannerVisible, setIsAccessBannerVisible] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
@@ -210,17 +209,33 @@ export default function App() {
 
   return (
     <main className="utility-shell">
-      {isAccessBannerVisible ? (
-        <section className="glass-card access-banner">
-          <div className="access-banner-main">
-            <div className="access-banner-copy">
-              <strong className="banner-title">Free access</strong>
-              <p>
-                This browser utility currently includes Instruments and Grid. Additional guided workflows remain hidden for paid unlocks.
-              </p>
+      <header className="glass-card utility-header">
+        <div className="utility-header-main">
+          <div className="utility-brand">
+            <h1>ToneGrid</h1>
+            <p>Free browser tone demo for Instruments and Grid.</p>
+          </div>
+
+          <div className="utility-header-actions">
+            <div className="tab-row" role="tablist" aria-label="ToneGrid views">
+              {[
+                { id: "instruments", label: "Instruments" },
+                { id: "grid", label: "Grid" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={`tab-button ${activeTab === tab.id ? "tab-button-active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div className="access-banner-actions">
+            <div className="workspace-pills" aria-label="Demo access actions">
               <span className="status-pill">
                 {demoAccess.expired
                   ? "Demo period ended"
@@ -238,58 +253,16 @@ export default function App() {
               >
                 Sign Up / Upgrade
               </button>
-              <button
-                type="button"
-                className="dismiss-button"
-                onClick={() => setIsAccessBannerVisible(false)}
-                aria-label="Dismiss free access banner"
-              >
-                Hide banner
-              </button>
+              <span className="feedback-placeholder" aria-label="Feedback link placeholder">
+                Feedback soon
+              </span>
             </div>
           </div>
-
-        </section>
-      ) : null}
-
-      <header className="utility-header">
-        <div className="utility-brand">
-          <h1>ToneGrid</h1>
-          <p>Browser tone utility</p>
         </div>
 
-        <div className="utility-header-actions">
-          <div className="tab-row" role="tablist" aria-label="ToneGrid views">
-            {[
-              { id: "instruments", label: "Instruments" },
-              { id: "grid", label: "Grid" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                className={`tab-button ${activeTab === tab.id ? "tab-button-active" : ""}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="workspace-pills">
-            <span className="status-pill status-pill-soft">
-              {demoAccess.expired
-                ? "Demo period ended"
-                : `Time remaining: ${formatCountdown(demoAccess.remainingSeconds)}`}
-            </span>
-            {!isAccessBannerVisible ? (
-              <button type="button" className="secondary-button" onClick={() => setIsAccessBannerVisible(true)}>
-                Show access banner
-              </button>
-            ) : null}
-          </div>
-        </div>
+        <p className="access-note">
+          Free access stays open for the public demo. Guided paid workflows live in ToneConditioner.
+        </p>
       </header>
 
       {activeTab === "instruments" ? (
