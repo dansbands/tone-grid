@@ -42,7 +42,6 @@
 .utility-header-actions,
 .workspace-pills,
 .grid-actions,
-.signup-form,
 .instrument-panel-actions {
   display: flex;
   gap: 0.75rem;
@@ -190,8 +189,7 @@
 }
 
 .field select,
-.field input,
-.signup-form input {
+.field input {
   width: 100%;
   border: 1px solid rgba(221, 206, 188, 0.9);
   border-radius: 14px;
@@ -292,7 +290,6 @@
   }
 
   .access-banner-actions,
-  .signup-form,
   .grid-actions,
   .workspace-pills,
   .instrument-panel-actions {

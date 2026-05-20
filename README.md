@@ -13,7 +13,7 @@ ToneGrid includes only the entry-level experience:
 - sustained tones
 - basic playback controls
 - guest usage
-- optional signup captured only for the current session
+- signup/upgrade handoff to ToneConditioner
 - a gated demo period that gives a real feel for the product while limiting abuse
 
 ToneGrid does not include:
@@ -62,8 +62,18 @@ ToneGrid is meant to be useful as a free product while still protecting the boun
 The current demo model is intentionally lightweight:
 
 - guest access works immediately
-- optional signup is available but stored only in memory for the current session
+- signup and upgrade CTAs redirect to ToneConditioner
 - playback is gated by a limited demo window
+
+## Configuration
+
+ToneGrid uses `VITE_TONE_CONDITIONER_BASE_URL` to build signup and upgrade handoff links:
+
+```bash
+VITE_TONE_CONDITIONER_BASE_URL=https://toneconditioner.example.com
+```
+
+Handoff URLs use `/from/tonegrid?ref=<ref>` so ToneConditioner can preserve source context.
 
 ## Architecture
 
@@ -118,6 +128,7 @@ npm run test
 - [src/utils/audio.js](src/utils/audio.js) — sustained tone playback
 - [src/utils/basicCycles.js](src/utils/basicCycles.js) — basic free-only cycle construction
 - [src/utils/demoAccess.js](src/utils/demoAccess.js) — guest demo timing rules
+- [src/utils/handoff.js](src/utils/handoff.js) — ToneConditioner handoff URL construction
 - [src/utils/notes.js](src/utils/notes.js) — note and transposition helpers
 
 ## Product principle

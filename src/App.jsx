@@ -4,6 +4,7 @@ import { instruments } from "../config/instruments.ts";
 import { createLiveNotePlayer, createTonePlayer } from "./utils/audio";
 import { buildBasicCycle } from "./utils/basicCycles";
 import { formatCountdown, getDemoAccessState } from "./utils/demoAccess";
+import { getToneConditionerHandoffUrl, TONE_CONDITIONER_HANDOFF_REFS } from "./utils/handoff";
 import { formatNote, transposeNote } from "./utils/notes";
 
 const DURATION_UNIT_OPTIONS = [
@@ -68,9 +69,6 @@ export default function App() {
   const [holdDurationUnit, setHoldDurationUnit] = useState("seconds");
   const [cycleDurationValue, setCycleDurationValue] = useState(10);
   const [cycleDurationUnit, setCycleDurationUnit] = useState("minutes");
-  const [accessMode, setAccessMode] = useState("guest");
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupSubmitted, setSignupSubmitted] = useState(false);
   const [isAccessBannerVisible, setIsAccessBannerVisible] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [isPlaying, setIsPlaying] = useState(false);
@@ -120,7 +118,6 @@ export default function App() {
     holdDurationUnit,
     cycleDurationValue,
     cycleDurationUnit,
-    accessMode,
   ].join(":");
 
   useEffect(() => {
@@ -208,18 +205,11 @@ export default function App() {
     setActiveLiveNotes(new Set());
   };
 
-  const handleSignupSubmit = (event) => {
-    event.preventDefault();
-
-    if (!signupEmail.trim()) {
-      return;
-    }
-
-    setSignupSubmitted(true);
-    setAccessMode("signup");
-  };
-
   const currentStep = currentStepIndex >= 0 ? cycleSteps[currentStepIndex] : null;
+  const upgradeHandoffUrl = useMemo(
+    () => getToneConditionerHandoffUrl(TONE_CONDITIONER_HANDOFF_REFS.upgradeButton),
+    [],
+  );
 
   return (
     <main className="utility-shell">
@@ -241,10 +231,15 @@ export default function App() {
               </span>
               <button
                 type="button"
-                className={accessMode === "signup" ? "primary-button" : "secondary-button"}
-                onClick={() => setAccessMode(accessMode === "signup" ? "guest" : "signup")}
+                className="primary-button"
+                disabled={!upgradeHandoffUrl}
+                onClick={() => {
+                  if (upgradeHandoffUrl) {
+                    window.location.assign(upgradeHandoffUrl);
+                  }
+                }}
               >
-                {accessMode === "signup" ? "Hide email form" : "Get product updates"}
+                Sign Up / Upgrade
               </button>
               <button
                 type="button"
@@ -257,22 +252,6 @@ export default function App() {
             </div>
           </div>
 
-          {accessMode === "signup" ? (
-            <form className="signup-form access-banner-form" onSubmit={handleSignupSubmit}>
-              <input
-                type="email"
-                aria-label="Email for product updates"
-                placeholder="Email for product updates"
-                value={signupEmail}
-                onChange={(event) => setSignupEmail(event.target.value)}
-              />
-              <button type="submit" className="primary-button">
-                Save for this session
-              </button>
-            </form>
-          ) : null}
-
-          {signupSubmitted ? <p className="helper-copy">Signup interest saved in this session only.</p> : null}
         </section>
       ) : null}
 

@@ -13,7 +13,7 @@ ToneGrid is the free/demo product for acoustic instrument conditioning. It shoul
 - sustained tones
 - basic playback controls
 - guest usage
-- optional signup
+- signup/upgrade handoff to ToneConditioner
 - demo gating / usage limiting
 - simple instrument and note configuration
 - basic audio playback helpers
@@ -60,6 +60,7 @@ Owns reusable low-level building blocks that are product-neutral, such as:
 - [src/utils/notes.js](../src/utils/notes.js) note conversion utilities
 - [src/utils/basicCycles.js](../src/utils/basicCycles.js) simple open-string cycles
 - [src/utils/demoAccess.js](../src/utils/demoAccess.js) guest demo gating
+- [src/utils/handoff.js](../src/utils/handoff.js) ToneConditioner signup/upgrade handoff URLs
 
 ### Remove entirely from ToneGrid
 - premium-flavored marketing language about intelligence or advanced conditioning
